@@ -1,40 +1,79 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Quét mã QR điểm danh</title>
+  <title>Điểm danh bằng mã QR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Thư viện quét QR -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Thư viện thông báo đẹp -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8.3.8/dist/sweetalert2.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #qr-reader { width: 300px; margin: auto; }
-    #result { margin-top: 20px; font-size: 18px; color: green; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      font-size: 16px;
+      background-color: #f9f9f9;
+    }
+    .wrap {
+      max-width: 500px;
+      margin: auto;
+      text-align: center;
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 16px;
+    }
+    #qr-reader {
+      width: 300px;
+      margin: 0 auto;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: green;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      background-color: #1a73e8;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
-  <h2>Quét mã QR để điểm danh</h2>
-  <div id="qr-reader"></div>
-  <div id="result"></div>
+  <div class="wrap">
+    <h1>Điểm danh bằng mã QR</h1>
+    <div id="qr-reader"></div>
+    <div id="result"></div>
+  </div>
 
   <script>
     function onScanSuccess(decodedText, decodedResult) {
       document.getElementById("result").innerText = "Mã quét: " + decodedText;
 
-      fetch("https://script.google.com/macros/s/AKfycbx_MZFnsojepfa2c3wtHKL6mKPOwsw05jAw4rVPHDLhVguX_ymNatgI86QCNILpipY/exec", {
-        method: "POST",
-        body: JSON.stringify({ code: decodedText }),
-        headers: { "Content-Type": "application/json" }
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Điểm danh thành công!");
-      })
-      .catch(err => {
-        alert("Lỗi gửi mã: " + err);
-      });
+      // Gửi mã về Apps Script Web App qua GET
+      fetch("https://script.google.com/macros/s/AKfycbxP-4Eaet5Ik3rmWmmeM5uyCpc1lM2mtHb0Sm0C6M0esmHa0IC2MFOpU9c0lysyaaCe/exec?code=" + encodeURIComponent(decodedText))
+        .then(res => res.json())
+        .then(data => {
+          Swal.fire("Thông báo", data.message || "Điểm danh thành công!", "success");
+        })
+        .catch(err => {
+          Swal.fire("Lỗi gửi mã", err.toString(), "error");
+        });
     }
 
     function onScanFailure(error) {
-      // không cần xử lý lỗi nhỏ
+      // Không cần xử lý lỗi nhỏ
     }
 
     const qrScanner = new Html5QrcodeScanner("qr-reader", {
