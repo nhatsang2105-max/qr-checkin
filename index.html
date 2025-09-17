@@ -4,83 +4,69 @@
   <meta charset="UTF-8">
   <title>Điểm danh bằng mã QR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Thư viện quét QR -->
+
+  <!-- 3.1 Nạp SweetAlert2 (phải trước khi gọi Swal.fire) -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- 3.2 Nạp html5-qrcode để quét QR -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <!-- Thư viện thông báo đẹp -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8.3.8/dist/sweetalert2.min.js"></script>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      font-size: 16px;
-      background-color: #f9f9f9;
-    }
-    .wrap {
-      max-width: 500px;
-      margin: auto;
-      text-align: center;
-    }
-    h1 {
-      font-size: 22px;
-      margin-bottom: 16px;
-    }
-    #qr-reader {
-      width: 300px;
-      margin: 0 auto;
-    }
-    #result {
-      margin-top: 20px;
-      font-size: 18px;
-      color: green;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-      background-color: #1a73e8;
-      color: white;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
-    }
+    body { font-family: Arial; text-align: center; padding: 20px; }
+    #qr-reader { width: 300px; margin: 0 auto; }
+    #result { margin-top: 20px; font-size: 18px; color: green; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Điểm danh bằng mã QR</h1>
-    <div id="qr-reader"></div>
-    <div id="result"></div>
-  </div>
 
+  <h1>Điểm danh bằng mã QR</h1>
+  <div id="qr-reader"></div>
+  <div id="result"></div>
+
+  <!-- 3.3 Định nghĩa hàm callback JSONP -->
+  <script>
+    /**
+     * hàm handleResponse sẽ được gọi tự động
+     * khi Web App trả về dữ liệu JSONP
+     */
+    function handleResponse(data) {
+      if (data.ok) {
+        Swal.fire('Thành công', data.message, 'success');
+      } else {
+        Swal.fire('Lỗi', data.message, 'error');
+      }
+    }
+  </script>
+
+  <!-- 3.4 Khởi tạo QR scanner và gọi JSONP khi quét thành công -->
   <script>
     function onScanSuccess(decodedText, decodedResult) {
-      document.getElementById("result").innerText = "Mã quét: " + decodedText;
+      // Hiển thị tạm mã đã quét
+      document.getElementById('result').innerText = 'Mã quét: ' + decodedText;
 
-      // Gửi mã về Apps Script Web App qua GET
-      fetch("https://script.google.com/macros/s/AKfycbzhTf9tS_3J4Rkp34CrQQPugxp9eHLNk75CHmU-hSqP1ml-UmnNKS495CBjFogWXMoy/exec?code=" + encodeURIComponent(decodedText))
-        .then(res => res.json())
-        .then(data => {
-          Swal.fire("Thông báo", data.message || "Điểm danh thành công!", "success");
-        })
-        .catch(err => {
-          Swal.fire("Lỗi gửi mã", err.toString(), "error");
-        });
+      // Tạo URL Web App kèm code và callback=handleResponse
+      const webAppUrl = 'https://script.google.com/macros/s/AKfycbzhTf9tS_3J4Rkp34CrQQPugxp9eHLNk75CHmU-hSqP1ml-UmnNKS495CBjFogWXMoy/exec';
+      const jsonpUrl  = webAppUrl
+        + '?code=' + encodeURIComponent(decodedText)
+        + '&callback=handleResponse';
+
+      // Tạo thẻ <script> để gọi JSONP (bỏ qua CORS)
+      const tag = document.createElement('script');
+      tag.src = jsonpUrl;
+      document.body.appendChild(tag);
     }
 
     function onScanFailure(error) {
-      // Không cần xử lý lỗi nhỏ
+      // lỗi nhỏ khi quét, bỏ qua
     }
 
-    const qrScanner = new Html5QrcodeScanner("qr-reader", {
-      fps: 10,
-      qrbox: 250
-    });
-
+    // Khởi tạo Html5QrcodeScanner
+    const qrScanner = new Html5QrcodeScanner(
+      'qr-reader',       // ID của <div>
+      { fps: 10, qrbox: 250 }
+    );
     qrScanner.render(onScanSuccess, onScanFailure);
   </script>
+
 </body>
 </html>
