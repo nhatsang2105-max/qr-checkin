@@ -19,53 +19,43 @@
       color: #333;
     }
   </style>
-  <!-- Thư viện HTML5 QR Code -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js"></script>
+  <!-- Thư viện HTML5 QR Code: phải load trước script khởi tạo -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js" defer></script>
 </head>
 <body>
-
   <h2>Quét mã QR để điểm danh</h2>
   <div id="reader"></div>
   <div id="result">Chưa quét.</div>
 
-  <script>
-    // URL Google Apps Script Web App của bạn
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzhTf9tS_3J4Rkp34CrQQPugxp9eHLNk75CHmU-hSqP1ml-UmnNKS495CBjFogWXMoy/exec';
+  <script defer>
+    document.addEventListener('DOMContentLoaded', () => {
+      const API_URL = 'https://script.google.com/macros/s/AKfycbzhTf9tS_3J4Rkp34CrQQPugxp9eHLNk75CHmU-hSqP1ml-UmnNKS495CBjFogWXMoy/exec'; // Thay bằng URL Web App Apps Script
 
-    // Hàm chạy khi quét thành công
-    function onScanSuccess(decodedText, decodedResult) {
-      // Ngừng scanner để không quét trùng lặp
-      html5QrCode.stop().catch(err => console.warn(err));
+      function onScanSuccess(decodedText) {
+        html5QrCode.stop().catch(() => {}); 
+        document.getElementById('result').innerText = 'Đang xác thực...';
 
-      // Hiển thị tạm
-      document.getElementById('result').innerText = 'Đang xác thực...';
-
-      // Gọi API với mã QR
-      fetch(`${API_URL}?code=${encodeURIComponent(decodedText)}`)
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById('result').innerText = data.message;
-        })
-        .catch(err => {
-          console.error(err);
-          document.getElementById('result').innerText = 'Lỗi kết nối server.';
-        });
-    }
-
-    // Khởi tạo Html5Qrcode
-    const html5QrCode = new Html5Qrcode("reader");
-    html5QrCode.start(
-      { facingMode: "environment" },   // chọn camera sau
-      { fps: 10, qrbox: 250 },         // cấu hình tốc độ và kích thước vùng quét
-      onScanSuccess,
-      errorMessage => {
-        // callback khi quét không thành công (bỏ qua)
+        fetch(`${API_URL}?code=${encodeURIComponent(decodedText)}`)
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById('result').innerText = data.message;
+          })
+          .catch(() => {
+            document.getElementById('result').innerText = 'Lỗi kết nối server.';
+          });
       }
-    ).catch(err => {
-      console.error("Không khởi động được camera:", err);
-      document.getElementById('result').innerText = 'Không truy cập được camera.';
+
+      const html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: 250 },
+        onScanSuccess,
+        () => {}
+      ).catch(err => {
+        console.error("Không khởi động được camera:", err);
+        document.getElementById('result').innerText = 'Không truy cập được camera.';
+      });
     });
   </script>
-
 </body>
 </html>
