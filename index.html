@@ -74,7 +74,7 @@
       document.getElementById('result').innerText = 'Đang gửi mã...';
 
       // Gửi mã về Apps Script Web App qua GET
-      fetch("https://script.google.com/macros/s/AKfycbxP-4Eaet5Ik3rmWmmeM5uyCpc1lM2mtHb0Sm0C6M0esmHa0IC2MFOpU9c0lysyaaCe/exec?code=" + encodeURIComponent(decodedText))
+      fetch("https://script.google.com/macros/s/AKfycbzhTf9tS_3J4Rkp34CrQQPugxp9eHLNk75CHmU-hSqP1ml-UmnNKS495CBjFogWXMoy/exec?code=" + encodeURIComponent(decodedText))
       fetch(`${apiUrl}?code=${encodeURIComponent(decodedText)}`)
 .then(res => res.json())
 .then(data => {
