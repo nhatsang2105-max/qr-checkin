@@ -2,71 +2,65 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Điểm danh bằng mã QR</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- 3.1 Nạp SweetAlert2 (phải trước khi gọi Swal.fire) -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <!-- 3.2 Nạp html5-qrcode để quét QR -->
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
+  <title>Điểm danh QR</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
-    body { font-family: Arial; text-align: center; padding: 20px; }
-    #qr-reader { width: 300px; margin: 0 auto; }
-    #result { margin-top: 20px; font-size: 18px; color: green; }
+    #reader { width: 400px; margin: auto; }
+    #result { font-size: 1.2em; margin-top: 20px; }
   </style>
 </head>
 <body>
-
-  <h1>Điểm danh bằng mã QR</h1>
-  <div id="qr-reader"></div>
+  <h2>Quét mã QR để điểm danh</h2>
+  <div id="reader"></div>
   <div id="result"></div>
-
-  <!-- 3.3 Định nghĩa hàm callback JSONP -->
   <script>
-    /**
-     * hàm handleResponse sẽ được gọi tự động
-     * khi Web App trả về dữ liệu JSONP
-     */
-    function handleResponse(data) {
-      if (data.ok) {
-        Swal.fire('Thành công', data.message, 'success');
-      } else {
-        Swal.fire('Lỗi', data.message, 'error');
-      }
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbwfLJRW_GaEY9liqwtwQnT5RlRlDdV4HN_P2peMcjqEpPgigTNb-H709uLL_KJ2YV2m/exec"; // Thay bằng URL Apps Script của bạn
+//https://script.google.com/macros/s/AKfycbwfLJRW_GaEY9liqwtwQnT5RlRlDdV4HN_P2peMcjqEpPgigTNb-H709uLL_KJ2YV2m/exec
+    function checkAttendance(code) {
+      fetch(`${scriptUrl}?code=${encodeURIComponent(code)}`)
+        .then(res => res.text())
+        .then(result => {
+          if(result === "success") {
+            document.getElementById('result').innerHTML = "<span style='color:green'>Điểm danh thành công!</span>";
+          } else if(result === "fail") {
+            document.getElementById('result').innerHTML = "<span style='color:red'>Mã không hợp lệ!</span>";
+          } else {
+            document.getElementById('result').innerHTML = "<span style='color:orange'>Lỗi: Không nhận được mã.</span>";
+          }
+        });
     }
-  </script>
 
-  <!-- 3.4 Khởi tạo QR scanner và gọi JSONP khi quét thành công -->
-  <script>
     function onScanSuccess(decodedText, decodedResult) {
-      // Hiển thị tạm mã đã quét
-      document.getElementById('result').innerText = 'Mã quét: ' + decodedText;
-
-      // Tạo URL Web App kèm code và callback=handleResponse
-      const webAppUrl = 'https://script.google.com/macros/s/AKfycbzhTf9tS_3J4Rkp34CrQQPugxp9eHLNk75CHmU-hSqP1ml-UmnNKS495CBjFogWXMoy/exec';
-      const jsonpUrl  = webAppUrl
-        + '?code=' + encodeURIComponent(decodedText)
-        + '&callback=handleResponse';
-
-      // Tạo thẻ <script> để gọi JSONP (bỏ qua CORS)
-      const tag = document.createElement('script');
-      tag.src = jsonpUrl;
-      document.body.appendChild(tag);
+      alert("Đã quét QR thành công, mã là: " + decodedText); // <--- THÊM DÒNG NÀY
+      document.getElementById('result').textContent = "Đang kiểm tra...";
+      checkAttendance(decodedText);
+      html5QrcodeScanner.clear(); // Tắt scanner sau khi quét
     }
+    function checkAttendance(code) {
+  alert("Sắp gửi lên API: " + code); // Debug 1
+fetch(`https://script.google.com/macros/s/AKfycbwfLJRW_GaEY9liqwtwQnT5RlRlDdV4HN_P2peMcjqEpPgigTNb-H709uLL_KJ2YV2m/exec?code=${encodeURIComponent(code)}`)
+    .then(res => res.text())
+    .then(result => {
+      alert("Kết quả trả về từ API: " + result); // Debug 2
+      if (result === "success") {
+        document.getElementById('result').innerHTML = "<span style='color:green'>Điểm danh thành công!</span>";
+      } else if (result === "fail") {
+        document.getElementById('result').innerHTML = "<span style='color:red'>Mã không hợp lệ hoặc đã điểm danh!</span>";
+      } else {
+        document.getElementById('result').innerHTML = "<span style='color:orange'>Lỗi! Không nhận được phản hồi phù hợp.</span>";
+      }
+    })
+    .catch(error => {
+      alert("Lỗi khi gọi API: " + error);  // Debug 3
+      document.getElementById('result').innerHTML = "<span style='color:orange'>Lỗi kết nối API!</span>";
+      console.error(error);
+    });
+}
 
-    function onScanFailure(error) {
-      // lỗi nhỏ khi quét, bỏ qua
-    }
-
-    // Khởi tạo Html5QrcodeScanner
-    const qrScanner = new Html5QrcodeScanner(
-      'qr-reader',       // ID của <div>
-      { fps: 10, qrbox: 250 }
-    );
-    qrScanner.render(onScanSuccess, onScanFailure);
+    var html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
   </script>
-
 </body>
 </html>
+
